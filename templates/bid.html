@@ -1,10 +1,17 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Bid on auction{% endblock %}
+
+{% block content %}
+{%  if not bidauctionmessage %}
+<p><b>Bid on Auction: {{ auct.title }}</b></p>
+    <form action="" method="post">
+        {%  csrf_token %}
+       <label for="minimum_price">Bid :</label>
+       <input type="number" name="minimum_price" id="minimum_price" min="{{auct.minimum_price}}" step="0.01" value="{{auct.minimum_price}}">
+        <input type="submit" value="Bid">
+    </form>
+{%  else %}
+    <h3>{{ bidauctionmessage }}</h3>
+    {% endif %}
+{% endblock %}

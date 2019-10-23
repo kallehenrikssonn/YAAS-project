@@ -1,10 +1,15 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+<h1>Search Results</h1>
+
+<ul>
+    <li>
+      {% for auct in aucts %}
+    <h2>{{ auct.title }}</h2> <a href="{% url 'auction:edit' auct.id %}">Edit auction</a>
+    <h3>Description</h3>
+        <p>{{ auct.description }}</p>
+        <h3>Minimum price</h3>
+    <p>{{ auct.minimum_price }}</p>
+        <h3>Deadline</h3>
+    <p>{{ auct.deadline_date }}</p>
+    </li>
+  {% endfor %}
+</ul>

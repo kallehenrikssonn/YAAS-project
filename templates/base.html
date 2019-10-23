@@ -1,10 +1,55 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>$Title$</title>
-</head>
+{% load i18n %}
+<html>
+<style type= "text/css">
+    body {padding: 0 5em; margin:0}
+    h1 {padding: 1em 1em;}
+    h2 {border-top: 1px dotted #fff; margin-top: 2em}
+    p {margin: 1em 0}
+</style>
 <body>
-$END$
+<h1>Yet another auction site</h1>
+
+<h2>{{ message }}</h2>
+    <br>
+    <b><a href="{% url 'auction:index' %}">Home</a> </b>
+
+
+    {% if user.is_authenticated %}
+        <p>Logged: {{ user.username }}</p>
+        <a href="{% url 'auction:create' %}">Add auction</a>
+        <a href="{% url 'signout' %}">Sign out</a>
+        <a href="{% url 'user:editprofile' %}">Edit profile</a>
+    {% else %}
+        <a href="{% url 'signin' %}">Sign in</a>
+        <a href="{% url 'signup' %}">Sign up</a>
+    {% endif %}
+
+<h5>Follow us on Facebook</h5>
+
+<form action="{% url 'auction:search' %}" method="post">
+    {% csrf_token %}
+  <input name="title" type="text" placeholder="Search for auctions">
+</form>
+
+{% block content %}
+    {% for auct in aucts %}
+    <h2>{{ auct.title }}</h2> <a href="{% url 'auction:edit' auct.id %}">Edit auction</a>
+        <a href="{% url 'auction:bid' auct.id %}">Bid auction</a>
+        {% if user.is_superuser %}
+        <a href="{% url 'auction:ban' auct.id %}">Ban auction</a>
+        {% endif %}
+    <h3>Description</h3>
+        <p>{{ auct.description }}</p>
+        <h3>Minimum price</h3>
+    <p>{{ auct.minimum_price }}</p> <p>{{ currency }}</p>
+        <h3>Deadline</h3>
+    <p>{{ auct.deadline_date }}</p>
+        <h3>Currently winning:</h3>
+        <p>{{ auct.bidder }}</p>
+{% empty %}
+    <p>No Auctions<p>
+{%  endfor %}
+{% endblock %}
+
 </body>
 </html>

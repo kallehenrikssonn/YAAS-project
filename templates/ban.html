@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h1>Ban auction:</h1>
+  <div >Highest bidder: {{auct.bidder}}</div>
+  <div >Title: {{auct.title}}</div>
+  <div >Title: {{auct.description}}</div>
+   <form action="{% url 'auction:ban' auct.id %}" method="post">
+       {% csrf_token %}
+       <button id=banButton type="submit" name="banned" value="False" onclick="bannedTrue()">Ban auction</button>
+   </form>
+{% endblock %}

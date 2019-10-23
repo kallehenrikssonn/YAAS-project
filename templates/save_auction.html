@@ -1,10 +1,20 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-</body>
-</html>
+
+<h2> Add auction</h2>
+{% block content %}
+
+<p><b>Confirm auction</b></p>
+
+    <h2>{{ saveAuctionMessage }}</h2>
+
+<b>{{title}}</b>
+
+    <form action="{% url 'save_auction' %}" method="post">
+        {% csrf_token %}
+         {{ form.as_p }}
+        <input type="submit" value="Submit">
+    </form>
+
+
+{% endblock %}

@@ -28,7 +28,9 @@ urlpatterns = [
     path('signin/', user.views.SignIn.as_view(), name='signin'),
     path('signout/', user.views.signout, name='signout'),
     path('changeLanguage/<lang_code>/', auction.views.changeLanguage, name='changeLanguage'),
-    path('changeCurrency/<currency_code>/', auction.views.changeCurrency, name='changeCurrency')
+    path('changeCurrency/<currency_code>/', auction.views.changeCurrency, name='changeCurrency'),
+    #path('home/', auction.views.auctions, name='home'),
+    path('confirm/', auction.views.saveAuction, name='save_auction'),
 ]
 
 urlpatterns += [

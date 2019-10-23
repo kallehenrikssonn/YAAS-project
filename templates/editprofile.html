@@ -1,10 +1,17 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Edit your profile{% endblock %}
+
+{% block content %}
+
+    <form action="" method="post">
+        {%  csrf_token %}
+        <label for="email">email :</label>
+       <input type="text" name="email" id="email" value="">
+        <label for="password">password :</label>
+        <input type="password" name="password" id="password" value="">
+
+        <input type="submit" value="Change">
+    </form>
+
+{% endblock %}

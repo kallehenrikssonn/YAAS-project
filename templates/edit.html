@@ -1,10 +1,17 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Edit your auction{% endblock %}
+
+{% block content %}
+{%  if not editauctionmessage %}
+<p><b>Edit Auction: {{ auct.title }}</b></p>
+    <form action="" method="post">
+        {%  csrf_token %}
+       <label for="description">description :</label>
+       <input type="text" name="description" id="description" value="">
+        <input type="submit" value="Change">
+    </form>
+{%  else %}
+    <h3>{{ editauctionmessage }}</h3>
+    {% endif %}
+{% endblock %}

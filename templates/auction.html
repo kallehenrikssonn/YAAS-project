@@ -1,10 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
+{% block content %}
 
-</body>
-</html>
+{% for auct in aucts %}
+    <h2>{{ auct.title }}</h2> <a href="{% url 'auction:edit' auct.id %}">Edit auction</a>
+    <p>{{ auct.description }}</p>
+    <p>{{ auct.minimum_price }}</p>
+    <p>{{ auct.deadline_date }}</p>
+{% empty %}
+    <p>No Auctions<p>
+{%  endfor %}
+{% endblock %}
