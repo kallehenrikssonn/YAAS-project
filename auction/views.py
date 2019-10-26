@@ -9,7 +9,6 @@ from django.core.mail import send_mail, send_mass_mail
 from datetime import datetime, timedelta
 from django.urls import reverse
 from django.db import IntegrityError, OperationalError, transaction
-from django.db.models import Q
 from django.template.loader import render_to_string
 from django.contrib.auth.models import User
 import json
@@ -17,13 +16,14 @@ import json
 
 def index(request):
     if request.user.is_superuser:
-        aucts = Auction.objects.all()
+        aucts = Auction.objects.filter(active=True, banned=False)
+        bannedAucts = Auction.objects.filter(banned=True)
         currency = "€"
-        return render(request, "base.html", {'aucts': aucts, 'currency':currency})
+        return render(request, "base.html", {'aucts': aucts, 'currency':currency, 'bannedAucts':bannedAucts})
     else:
         aucts = Auction.objects.filter(active=True, banned=False)
         currency = "€"
-        return render(request, "base.html", {'aucts': aucts})
+        return render(request, "base.html", {'aucts': aucts, 'currency':currency})
 
 """def auctions(request):
     aucts = Auction.objects.order_by('-deadline_date')
@@ -80,18 +80,15 @@ def saveAuction(request):
         deadline_date = request.POST.get('deadline_date', '')
         deadline = datetime.strptime(deadline_date, '%Y-%m-%d %H:%M:%S')
         if deadline < (datetime.now() + timedelta(hours=72)):
-            saveAuctionMessage = "Deadline must be 72 hours from now"
+            saveAuctionMessage = "Deadline must be at least 72 hours from now"
             return render(request, 'save_auction.html', {'title': title, 'saveAuctionMessage': saveAuctionMessage})
         else:
-            auct=Auction(seller=request.user ,title=title, description=description, minimum_price=minimum_price, deadline_date=deadline_date)
+            auct=Auction(seller=request.user ,title=title, description=description, minimum_price=minimum_price,
+                         deadline_date=deadline_date)
             auct.save()
-            #link=render_to_string(auction/auction/auct.id)
             send_mail('Auction added successfully.', 'Auction titled ' + str(auct.title) + ' added successfully. Description: '
-                  + str(auct.description) + '.', 'admin@admin.com', [request.user.email])
-        #mail = Email(title = 'Auction added successfully.',
-         #   body = 'Auction titled ' + auct.title + ' added successfully. Description: ' + str(auct.description) + '.',
-          #  emailTo = auct.seller)
-        #mail.save()
+                  + str(auct.description) + '. Link to your auction: http://127.0.0.1:8000/auction/' + str(auct.id),
+                      'admin@admin.com', [request.user.email])
             return HttpResponseRedirect(reverse("auction:index"))
     else:
         #messages.add_message(request, messages.INFO, _("Auction cancelled"))
@@ -138,19 +135,26 @@ def bid(request, item_id):
             auct = Auction.objects.get(id=item_id)
             new_price = float(request.POST["minimum_price"].strip())
             minimum_price = float(auct.minimum_price)
+            deadline_date = auct.deadline_date
+            deadline = datetime.strptime(deadline_date, '%Y-%m-%d %H:%M:%S')
             if auct.active == False:
                 bidauctionmessage = "You can only bid on active auctions"
                 return render(request, 'bid.html', {"bidauctionmessage": bidauctionmessage})
-            #if datetime(auct.deadline_date) <= datetime.now():
-                #bidauctionmessage = "You can only bid on active auctions"
-                #return render(request, 'bid.html', {"bidauctionmessage": bidauctionmessage})
+            if deadline <= datetime.now():
+                bidauctionmessage = "You can only bid on active auctions"
+                return render(request, 'bid.html', {"bidauctionmessage": bidauctionmessage})
             if new_price <= minimum_price:
                 bidauctionmessage = "New bid must be greater than the current bid for at least 0.01"
                 return render(request, 'bid.html', {"bidauctionmessage": bidauctionmessage})
             else:
                 auct.minimum_price = new_price
                 auct.bidder = request.user.username
+                auct.bidder_email = request.user.email
                 auct.save()
+                send_mail('You have bid to an auction.',
+                          'Auction titled ' + str(auct.title) + ' has a currently winning bid placed by you.', 'admin@admin.com', [auct.bidder_email])
+                send_mail('Auction where you are the seller has been bid.',
+                          'Auction titled ' + str(auct.title) + ' has been bid by one of our users.', 'admin@admin.com', [auct.seller_email])
                 message = "You has bid succesfully"
                 return render(request, 'base.html', {"message": message})
 
@@ -172,41 +176,37 @@ def ban(request, item_id):
                 auct.save()
                 saved = True
                 message="Ban succesfully"
+                send_mail('Auction you have bid has been banned.',
+                          'Auction titled ' + str(auct.title) + ' has been banned.',
+                          'admin@admin.com', [auct.bidder_email])
+                send_mail('Auction where you are the seller has been banned.',
+                          'Auction titled ' + str(auct.title) + ' has been banned.', 'admin@admin.com',
+                          [auct.seller_email])
                 return render(request, "base.html", {"message": message})
         except OperationalError:
             messages.add_message(request, messages.ERROR, "Database locked. Try again.")
-            return render(request, "ban.html", {"auction": auction})
-
-        #if saved:
-            # Send email to highestBidders and auction creator
-          #  user=User.objects.filter(username=auct.seller)
-           # email=user.email
-           # send_mail('Your auction has been banned',
-            #          'Your auction titled ' + auct.title + ' has been banned.',
-             #         'admin@admin.com', [email])
-           # mail = Email(title='Your auction has been banned',
-            #             body='Your auction titled ' + auct.title + ' has been banned.',
-             #            emailTo=email)
-            #mail.save()
-            #list = BidAuction.objects.filter(auction=auction)
-            #if len(list) > 0:
-             #   massMailList = []
-              #  for l in list:
-               #     massMailList.append(l.bidder.email)
-                #send_mail('Action you have bidded to has been banned',
-                 #         'Auction titled ' + auction.auctionTitle + ' has been banned.',
-                  #        'merisrnn@gmail.com', [massMailList])
-                #mail = Email(title='Action you have bidded to has been banned',
-                 #            body='Auction titled ' + auction.auctionTitle + ' has been banned.',
-                  #           emailTo=massMailList.objects.last())
-                #mail.save()
-            #messages.add_message(request, messages.INFO, _("Auction banned"))
-            #return HttpResponseRedirect(reverse("home"))
-
+            return render(request, "ban.html", {"auct": auct})
 
 
 def resolve(request):
-    pass
+    if request.method == "GET":
+        if request.user.is_authenticated:
+            aucts = Auction.objects.all()
+            resolved=[]
+            for auct in aucts:
+                if datetime.now() > auct.deadline_date:
+                    resolved.append(auct.title)
+                    auct.active=False
+                    bidderEmail = auct.bidder_email
+                    sellerEmail = auct.seller_email
+                    send_mail('Auction you have bid has been resolved.',
+                          'Auction titled ' + str(auct.title) + ' has been resolved.', 'admin@admin.com', [bidderEmail])
+                    send_mail('Auction where you are the seller has been resolved.',
+                          'Auction titled ' + str(auct.title) + ' has been resolved.', 'admin@admin.com', [sellerEmail])
+                return render(request, "resolve.html", {"resolved": resolved})
+        else:
+            return HttpResponseRedirect(reverse("signin"))
+
 
 def changeLanguage(request, lang_code):
     pass

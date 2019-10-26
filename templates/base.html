@@ -49,6 +49,22 @@
 {% empty %}
     <p>No Auctions<p>
 {%  endfor %}
+    {% if user.is_superuser %}
+        <h1>Banned auctions:</h1>
+    {% for bannedAuct in bannedAucts %}
+    <h2>{{ auct.title }}</h2>
+        <h3>Description</h3>
+        <p>{{ auct.description }}</p>
+        <h3>Minimum price</h3>
+    <p>{{ auct.minimum_price }}</p> <p>{{ currency }}</p>
+        <h3>Deadline</h3>
+    <p>{{ auct.deadline_date }}</p>
+        <h3>Currently winning:</h3>
+        <p>{{ auct.bidder }}</p>
+{% empty %}
+    <h2>No banned auctions</h2>
+{%  endfor %}
+    {% endif %}
 {% endblock %}
 
 </body>

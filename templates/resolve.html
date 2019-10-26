@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Resolved auctions:</h1>
+<h2>{{ resolved }}</h2>
+{% if not resolved %}
+    <p>No Auctions<p>
+{%  endif %}
+{% endblock %}

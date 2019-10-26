@@ -1,6 +1,6 @@
 1. Kalle Juhani Henriksson. I study at University of Turku, student number 507289. I was not able to find Åbo Akademi student number as a JOO-student.
 
-2. UC1-UC7.
+2. UC1-UC8, REQ3.5.
 
 3. I used Google Chrome to test the application.
 
