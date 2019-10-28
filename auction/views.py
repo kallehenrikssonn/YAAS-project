@@ -5,13 +5,14 @@ from user.forms import CreateAuctionForm, ConfAuctionForm, EditAuctionForm, BidA
 from django.shortcuts import render, redirect, get_object_or_404
 from auction.models import Auction, Email, BidAuction
 from django.contrib import messages
-from django.core.mail import send_mail, send_mass_mail
+from django.core.mail import send_mail
 from datetime import datetime, timedelta
 from django.urls import reverse
 from django.db import IntegrityError, OperationalError, transaction
-from django.template.loader import render_to_string
 from django.contrib.auth.models import User
 import json
+from django.utils.translation import gettext as _
+from django.utils import translation
 
 
 def index(request):
@@ -80,7 +81,7 @@ def saveAuction(request):
         deadline_date = request.POST.get('deadline_date', '')
         deadline = datetime.strptime(deadline_date, '%Y-%m-%d %H:%M:%S')
         if deadline < (datetime.now() + timedelta(hours=72)):
-            saveAuctionMessage = "Deadline must be at least 72 hours from now"
+            saveAuctionMessage = _("Deadline must be at least 72 hours from now")
             return render(request, 'save_auction.html', {'title': title, 'saveAuctionMessage': saveAuctionMessage})
         else:
             auct=Auction(seller=request.user ,title=title, description=description, minimum_price=minimum_price,
@@ -103,7 +104,7 @@ class EditAuction(View):
             if auct.seller == user.username:
                 return render(request, "edit.html", {"auct": auct})
             else:
-                editauctionmessage = "That is not your auction to edit"
+                editauctionmessage = _("That is not your auction to edit")
                 return render(request, 'edit.html', {"editauctionmessage": editauctionmessage})
         else:
             return HttpResponseRedirect(reverse("signin"))
@@ -123,7 +124,7 @@ def bid(request, item_id):
             user = request.user
             auct = get_object_or_404(Auction, id=item_id)
             if auct.seller == user.username:
-                bidauctionmessage = "You cannot bid on your own auctions"
+                bidauctionmessage = _("You cannot bid on your own auctions")
                 return render(request, 'bid.html', {"bidauctionmessage": bidauctionmessage})
             else:
                 return render(request, "bid.html", {"auct": auct})
@@ -138,13 +139,13 @@ def bid(request, item_id):
             deadline_date = auct.deadline_date
             deadline = datetime.strptime(deadline_date, '%Y-%m-%d %H:%M:%S')
             if auct.active == False:
-                bidauctionmessage = "You can only bid on active auctions"
+                bidauctionmessage = _("You can only bid on active auctions")
                 return render(request, 'bid.html', {"bidauctionmessage": bidauctionmessage})
             if deadline <= datetime.now():
-                bidauctionmessage = "You can only bid on active auctions"
+                bidauctionmessage = _("You can only bid on active auctions")
                 return render(request, 'bid.html', {"bidauctionmessage": bidauctionmessage})
             if new_price <= minimum_price:
-                bidauctionmessage = "New bid must be greater than the current bid for at least 0.01"
+                bidauctionmessage = _("New bid must be greater than the current bid for at least 0.01")
                 return render(request, 'bid.html', {"bidauctionmessage": bidauctionmessage})
             else:
                 auct.minimum_price = new_price
@@ -175,7 +176,7 @@ def ban(request, item_id):
             with transaction.atomic():
                 auct.save()
                 saved = True
-                message="Ban succesfully"
+                message=_("Ban succesfully")
                 send_mail('Auction you have bid has been banned.',
                           'Auction titled ' + str(auct.title) + ' has been banned.',
                           'admin@admin.com', [auct.bidder_email])
@@ -209,7 +210,10 @@ def resolve(request):
 
 
 def changeLanguage(request, lang_code):
-    pass
+    translation.activate(lang_code)
+    request.session[translation.LANGUAGE_SESSION_KEY] = lang_code
+    #messages.add_message(request, messages.INFO, "Language Changed to " + lang_code)
+    return HttpResponseRedirect(reverse("auction:index"))
 
 
 def changeCurrency(request, currency_code):

@@ -40,7 +40,7 @@ class SignUp(View):
                 login(request, user)
                 return redirect("index")
         if form.is_valid() == False:
-            userMessage = "This username has been taken"
+            userMessage = _("This username has been taken")
             return render(request, 'signup.html', {'form': form, 'userMessage': userMessage}, status=200)
 
 class SignIn(View):

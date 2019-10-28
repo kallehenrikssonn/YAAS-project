@@ -8,20 +8,20 @@
 </style>
 <body>
 <h1>Yet another auction site</h1>
-
+<p>Current language: {% get_current_language as LANGUAGE_CODE %} {{ LANGUAGE_CODE }}</p>
 <h2>{{ message }}</h2>
     <br>
-    <b><a href="{% url 'auction:index' %}">Home</a> </b>
+    <b><a href="{% url 'auction:index' %}">{% trans "Home" %}</a> </b>
 
 
     {% if user.is_authenticated %}
         <p>Logged: {{ user.username }}</p>
-        <a href="{% url 'auction:create' %}">Add auction</a>
-        <a href="{% url 'signout' %}">Sign out</a>
-        <a href="{% url 'user:editprofile' %}">Edit profile</a>
+        <a href="{% url 'auction:create' %}">{% trans "Add auction" %}</a>
+        <a href="{% url 'signout' %}">{% trans "Sign out" %}</a>
+        <a href="{% url 'user:editprofile' %}">{% trans "Edit profile" %}</a>
     {% else %}
-        <a href="{% url 'signin' %}">Sign in</a>
-        <a href="{% url 'signup' %}">Sign up</a>
+        <a href="{% url 'signin' %}">{% trans "Sign in" %}</a>
+        <a href="{% url 'signup' %}">{% trans "Sign up" %}</a>
     {% endif %}
 
 <h5>Follow us on Facebook</h5>
