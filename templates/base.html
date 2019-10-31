@@ -9,6 +9,7 @@
 <body>
 <h1>Yet another auction site</h1>
 <p>Current language: {% get_current_language as LANGUAGE_CODE %} {{ LANGUAGE_CODE }}</p>
+<h2>{{ changeLanguageMessage }}</h2>
 <h2>{{ message }}</h2>
     <br>
     <b><a href="{% url 'auction:index' %}">{% trans "Home" %}</a> </b>

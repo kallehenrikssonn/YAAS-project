@@ -1,20 +1,20 @@
 from django.views import View
-from django.http import HttpResponse
 from django.http import HttpResponseRedirect
-from user.forms import CreateAuctionForm, ConfAuctionForm, EditAuctionForm, BidAuctionForm
-from django.shortcuts import render, redirect, get_object_or_404
-from auction.models import Auction, Email, BidAuction
+from user.forms import CreateAuctionForm, ConfAuctionForm
+from django.shortcuts import render, get_object_or_404
+from auction.models import Auction
 from django.contrib import messages
 from django.core.mail import send_mail
 from datetime import datetime, timedelta
 from django.urls import reverse
-from django.db import IntegrityError, OperationalError, transaction
-from django.contrib.auth.models import User
-import json
+from django.db import OperationalError, transaction
 from django.utils.translation import gettext as _
 from django.utils import translation
+import requests
+import json
+from decimal import Decimal
 
-
+#Function for showing all active and not banned auctions
 def index(request):
     if request.user.is_superuser:
         aucts = Auction.objects.filter(active=True, banned=False)
@@ -26,22 +26,7 @@ def index(request):
         currency = "€"
         return render(request, "base.html", {'aucts': aucts, 'currency':currency})
 
-"""def auctions(request):
-    aucts = Auction.objects.order_by('-deadline_date')
-    return render(request, "base.html", {'aucts': aucts})"""
 
-"""def index(request):
-    print(request.headers)
-    print("creating response...")
-    html = "<html><body>Hello! <br> <p> This was your request: %s %s <p> sent from the following browser: %s </body></html>" % (
-    request.method, request.path, request.headers['User-Agent'])
-    return HttpResponse(html)"""
-
-"""def search(request):
-    query = request.GET.get('q')
-    aucts = Auction.objects.filter(
-        Q(title__icontains=query)
-    return render(request, 'search.html', {'aucts': aucts})"""
 
 def search(request):
     title = request.POST['title']
@@ -92,7 +77,6 @@ def saveAuction(request):
                       'admin@admin.com', [request.user.email])
             return HttpResponseRedirect(reverse("auction:index"))
     else:
-        #messages.add_message(request, messages.INFO, _("Auction cancelled"))
         return HttpResponseRedirect(reverse("auction:index"))
 
 
@@ -212,9 +196,34 @@ def resolve(request):
 def changeLanguage(request, lang_code):
     translation.activate(lang_code)
     request.session[translation.LANGUAGE_SESSION_KEY] = lang_code
-    #messages.add_message(request, messages.INFO, "Language Changed to " + lang_code)
-    return HttpResponseRedirect(reverse("auction:index"))
+    if lang_code=="sv":
+        changeLanguageMessage="Language has been changed to Swedish"
+    if lang_code=="en":
+        changeLanguageMessage = "Language has been changed to English"
+    return render(request, "base.html", {"changeLanguageMessage": changeLanguageMessage})
+    #return HttpResponseRedirect(reverse("auction:index"))
 
 
 def changeCurrency(request, currency_code):
-    pass
+    if currency_code == "usd":
+        currencyFrom ="EUR"
+        currencyTo="USD"
+        url = "https://api.exchangeratesapi.io/latest?base=" + currencyFrom
+        response = requests.get(url)
+        data = response.text
+        parsed = json.loads(data)
+        rates=parsed["rates"]
+        for currency, rate in rates.items():
+            if currency == currencyTo:
+                ConversionRate=Decimal(str(rate))
+        aucts = Auction.objects.filter(active=True, banned=False)
+        for auct in aucts:
+            auct.minimum_price = auct.minimum_price * ConversionRate
+        currency = "$"
+        return render(request, "base.html", {'aucts': aucts, 'currency': currency})
+    if currency_code == "eur":
+        aucts = Auction.objects.filter(active=True, banned=False)
+        currency = "€"
+        return render(request, "base.html", {'aucts': aucts, 'currency': currency})
+
+
