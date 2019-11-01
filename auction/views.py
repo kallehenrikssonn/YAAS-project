@@ -222,7 +222,7 @@ def changeCurrency(request, currency_code):
         currency = "$"
         message = "Currency has been changed to USD"
         return render(request, "base.html", {'aucts': aucts, 'currency': currency, 'message':message})
-    if currency_code == "eur":
+    if currency_code == "eur": #This was a lazy choice
         aucts = Auction.objects.filter(active=True, banned=False)
         currency = "€"
         message = "Currency has been changed to EUR"
