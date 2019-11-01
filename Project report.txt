@@ -1,6 +1,6 @@
 1. Kalle Juhani Henriksson. I study at University of Turku, student number 507289, email kajuhe@utu.fi. Åbo Akademi username kalhenri, email kalle.henriksson@abo.fi and student number as FITECH-student 1902248, and as JOO-student 72941-386-2016.
 
-2. UC1-UC9, UC11, REQ9.3, REQ3.5. I do not know whether concurrency works or not. Since this is one of the last courses I need for my degree and I've already build my career as a data analyst, I'm just aiming to pass this course.
+2. UC1-UC9, UC11, WS1, REQ9.3, REQ3.5. I do not know whether concurrency works or not. These should lead to 21 points and grade 3 but if there is something not working correctly I will accept a lower grade since this is one of the last courses I need for my degree and I'm just aiming to pass this course.
 
 3. I used Google Chrome to test the application.
 

@@ -220,10 +220,12 @@ def changeCurrency(request, currency_code):
         for auct in aucts:
             auct.minimum_price = auct.minimum_price * ConversionRate
         currency = "$"
-        return render(request, "base.html", {'aucts': aucts, 'currency': currency})
+        message = "Currency has been changed to USD"
+        return render(request, "base.html", {'aucts': aucts, 'currency': currency, 'message':message})
     if currency_code == "eur":
         aucts = Auction.objects.filter(active=True, banned=False)
         currency = "€"
-        return render(request, "base.html", {'aucts': aucts, 'currency': currency})
+        message = "Currency has been changed to EUR"
+        return render(request, "base.html", {'aucts': aucts, 'currency': currency, 'message':message})
 
 
