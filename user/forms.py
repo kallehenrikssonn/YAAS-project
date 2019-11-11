@@ -17,7 +17,7 @@ class EditProfileForm(forms.ModelForm):
 
 class CreateAuctionForm(forms.ModelForm):
     deadline_date = forms.DateTimeField(widget=forms.DateTimeInput(format="%d.%m.%Y %H:%M:%S"),
-                                        input_formats=("%d.%m.%Y %H:%M:%S", ))
+                                        input_formats=("%d.%m.%Y %H:%M:%S", )) #Use required time and date format
     class Meta:
         model = Auction
         fields = ('title', 'description', 'minimum_price')

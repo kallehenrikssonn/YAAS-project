@@ -27,14 +27,14 @@ def index(request):
         return render(request, "base.html", {'aucts': aucts, 'currency':currency})
 
 
-
+#search done with object filtering
 def search(request):
     title = request.POST['title']
     if request.method == 'POST':
         results = Auction.objects.filter(title__contains=title, banned=False)
         return render(request, 'base.html', {'aucts': results})
 
-
+#get for getting the form to create auction, post to post filled form to save the auction
 class CreateAuction(View):
     def get(self, request):
         if request.user.is_authenticated:
@@ -56,7 +56,7 @@ class CreateAuction(View):
             return render(request, 'save_auction.html', {'form': form, 'title': title})
         else:
             return render(request, 'create.html', {'form': form})
-
+#Function connected to save_auction.html
 def saveAuction(request):
     option = request.POST.get('option', '')
     if option == 'Yes':
@@ -64,8 +64,8 @@ def saveAuction(request):
         description = request.POST.get('description', '')
         minimum_price = request.POST.get('minimum_price', '')
         deadline_date = request.POST.get('deadline_date', '')
-        deadline = datetime.strptime(deadline_date, '%Y-%m-%d %H:%M:%S')
-        if deadline < (datetime.now() + timedelta(hours=72)):
+        deadline = datetime.strptime(deadline_date, '%Y-%m-%d %H:%M:%S') #deadline in format required
+        if deadline < (datetime.now() + timedelta(hours=72)): #Checking that deadline meets requirements
             saveAuctionMessage = _("Deadline must be at least 72 hours from now")
             return render(request, 'save_auction.html', {'title': title, 'saveAuctionMessage': saveAuctionMessage})
         else:
@@ -74,18 +74,18 @@ def saveAuction(request):
             auct.save()
             send_mail('Auction added successfully.', 'Auction titled ' + str(auct.title) + ' added successfully. Description: '
                   + str(auct.description) + '. Link to your auction: http://127.0.0.1:8000/auction/' + str(auct.id),
-                      'admin@admin.com', [request.user.email])
+                      'admin@admin.com', [request.user.email]) #Sending link to auction
             return HttpResponseRedirect(reverse("auction:index"))
     else:
         return HttpResponseRedirect(reverse("auction:index"))
 
-
+#get for getting form for auction editing, post for posting edited version of the auction
 class EditAuction(View):
     def get(self, request, id):
         if request.user.is_authenticated:
             user = request.user
             auct = get_object_or_404(Auction, id=id)
-            if auct.seller == user.username:
+            if auct.seller == user.username: #check if user has rights to edit the auction
                 return render(request, "edit.html", {"auct": auct})
             else:
                 editauctionmessage = _("That is not your auction to edit")
@@ -95,19 +95,19 @@ class EditAuction(View):
 
     def post(self, request, id):
         auct = Auction.objects.get(id=id)
-        description = request.POST["description"].strip()
+        description = request.POST["description"].strip() #New description from the form to auction's description
         auct.description = description
         auct.save()
         return HttpResponseRedirect(reverse("auction:index"))
 
 
-#Why bidding is not done as a class
+#Since bidding was not as a class, I used if request.method for get and post situations
 def bid(request, item_id):
     if request.method == "GET":
         if request.user.is_authenticated:
             user = request.user
             auct = get_object_or_404(Auction, id=item_id)
-            if auct.seller == user.username:
+            if auct.seller == user.username: #check if user has rights to bid
                 bidauctionmessage = _("You cannot bid on your own auctions")
                 return render(request, 'bid.html', {"bidauctionmessage": bidauctionmessage})
             else:
@@ -119,9 +119,10 @@ def bid(request, item_id):
         if request.user.is_authenticated:
             auct = Auction.objects.get(id=item_id)
             new_price = float(request.POST["minimum_price"].strip())
-            minimum_price = float(auct.minimum_price)
+            minimum_price = float(auct.minimum_price) #convert to float to enable comparison to old price
             deadline_date = auct.deadline_date
             deadline = datetime.strptime(deadline_date, '%Y-%m-%d %H:%M:%S')
+            #if-sentences for every possible scenario where bidding should be aborted
             if auct.active == False:
                 bidauctionmessage = _("You can only bid on active auctions")
                 return render(request, 'bid.html', {"bidauctionmessage": bidauctionmessage})
@@ -131,7 +132,7 @@ def bid(request, item_id):
             if new_price <= minimum_price:
                 bidauctionmessage = _("New bid must be greater than the current bid for at least 0.01")
                 return render(request, 'bid.html', {"bidauctionmessage": bidauctionmessage})
-            else:
+            else: #Everything is fine
                 auct.minimum_price = new_price
                 auct.bidder = request.user.username
                 auct.bidder_email = request.user.email
@@ -143,7 +144,7 @@ def bid(request, item_id):
                 message = "You has bid succesfully"
                 return render(request, 'base.html', {"message": message})
 
-
+#Again used request.method for get and post
 def ban(request, item_id):
     if request.method == "GET":
         if request.user.is_superuser:
@@ -156,11 +157,12 @@ def ban(request, item_id):
         auct.banned = True
         auct.active = False
         saved = False
-        try:
+        try: #Auction exists and is bannable
             with transaction.atomic():
                 auct.save()
                 saved = True
                 message=_("Ban succesfully")
+                #Mails for bidder and seller
                 send_mail('Auction you have bid has been banned.',
                           'Auction titled ' + str(auct.title) + ' has been banned.',
                           'admin@admin.com', [auct.bidder_email])
@@ -168,22 +170,23 @@ def ban(request, item_id):
                           'Auction titled ' + str(auct.title) + ' has been banned.', 'admin@admin.com',
                           [auct.seller_email])
                 return render(request, "base.html", {"message": message})
-        except OperationalError:
-            messages.add_message(request, messages.ERROR, "Database locked. Try again.")
+        except OperationalError: #Auction can't be found
+            messages.add_message(request, messages.ERROR, "Something went wrong. Please try again.")
             return render(request, "ban.html", {"auct": auct})
 
-
+#Resolving starts with get request to auction/resolve by authenticated user
 def resolve(request):
     if request.method == "GET":
         if request.user.is_authenticated:
             aucts = Auction.objects.all()
             resolved=[]
             for auct in aucts:
-                if datetime.now() > auct.deadline_date:
+                if datetime.now() > auct.deadline_date: #Check if deadline has been passed
                     resolved.append(auct.title)
                     auct.active=False
                     bidderEmail = auct.bidder_email
                     sellerEmail = auct.seller_email
+                    #send mail to bidder and seller that auction has been resolved
                     send_mail('Auction you have bid has been resolved.',
                           'Auction titled ' + str(auct.title) + ' has been resolved.', 'admin@admin.com', [bidderEmail])
                     send_mail('Auction where you are the seller has been resolved.',
@@ -192,7 +195,7 @@ def resolve(request):
         else:
             return HttpResponseRedirect(reverse("signin"))
 
-
+#Used lab instructions as an example for language changing
 def changeLanguage(request, lang_code):
     translation.activate(lang_code)
     request.session[translation.LANGUAGE_SESSION_KEY] = lang_code
@@ -208,18 +211,18 @@ def changeCurrency(request, currency_code):
     if currency_code == "usd":
         currencyFrom ="EUR"
         currencyTo="USD"
-        url = "https://api.exchangeratesapi.io/latest?base=" + currencyFrom
+        url = "https://api.exchangeratesapi.io/latest?base=" + currencyFrom #Found this api good for this purpose
         response = requests.get(url)
         data = response.text
-        parsed = json.loads(data)
+        parsed = json.loads(data) #Load currency rates to a variable
         rates=parsed["rates"]
-        for currency, rate in rates.items():
+        for currency, rate in rates.items(): #Loop currency rates until needed rate is found
             if currency == currencyTo:
-                ConversionRate=Decimal(str(rate))
+                ConversionRate=Decimal(str(rate)) #Decimal object needed for arithmetic operations
         aucts = Auction.objects.filter(active=True, banned=False)
-        for auct in aucts:
+        for auct in aucts: #Loop through auctions and perform multiplication by currency rate
             auct.minimum_price = auct.minimum_price * ConversionRate
-        currency = "$"
+        currency = "$" #Display information about currency change
         message = "Currency has been changed to USD"
         return render(request, "base.html", {'aucts': aucts, 'currency': currency, 'message':message})
     if currency_code == "eur": #This was a lazy choice

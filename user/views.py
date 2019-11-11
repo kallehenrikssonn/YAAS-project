@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.http import HttpResponseRedirect
 from django.urls import reverse
-
+#Get to get signup page, post to post required information
 class SignUp(View):
     def get(self, request):
         form = SignUpForm()
@@ -20,6 +20,7 @@ class SignUp(View):
             uservalue = form.cleaned_data.get('username')
             passwordvalue = form.cleaned_data.get('password')
             emailvalue = form.cleaned_data.get('email')
+            #Checks that username and email do not exist already
             try:
                 user = User.objects.get(username=uservalue)
                 return render(request, 'signup.html', {'form': form})
@@ -42,7 +43,7 @@ class SignUp(View):
         if form.is_valid() == False:
             userMessage = _("This username has been taken")
             return render(request, 'signup.html', {'form': form, 'userMessage': userMessage}, status=200)
-
+#Get to get signin page, post for signing in
 class SignIn(View):
     def get(self, request):
         return render(request, 'signin.html')
@@ -52,7 +53,7 @@ class SignIn(View):
         password = request.POST.get('password', '')
         nextTo = request.GET.get('next', reverse("index"))
         user = authenticate(username=username, email=email, password=password)
-
+        #Check that user exists and is active
         if user is not None and user.is_active:
             login(request, user)
             print(user.password)
@@ -61,12 +62,12 @@ class SignIn(View):
             messages.add_message(request, messages.ERROR, "Invalid username or password")
             return HttpResponseRedirect(reverse("signin"))
 
-
+#Used logout from django library for this function
 def signout(request):
     logout(request)
     return redirect("index")
 
-
+#Get to get profile editing form, post for posting the form
 class EditProfile(View):
     def get(self, request):
         if request.user.is_authenticated:
@@ -79,7 +80,7 @@ class EditProfile(View):
         user=request.user
         emailvalue = request.POST["email"]
         passwordvalue = request.POST.get("password", "")
-        try:
+        try: #Check if username, password or email exist
             email = User.objects.get(email=emailvalue)
             return render(request, 'editprofile.html')
         except User.DoesNotExist:
